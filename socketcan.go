@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 
 const (
 	resourceNamespace         = "k8s.collabora.com"
-	containerWaitRetrySeconds = 5
+	containerWaitDelaySeconds = 5
 	vcanNameTemplate          = "vcan%d"
 )
 
@@ -44,16 +43,21 @@ func (scl SocketCANLister) NewPlugin(socketcan string) dpm.PluginInterface {
 	}
 }
 
+// Device plugin class
 const (
 	fakeDevicePath = "/var/run/device-plugin-socketcan-fakedev"
 )
 
-// Device plugin class
 type SocketCANDevicePlugin struct {
 	assignmentCh chan *Assignment
 	device_paths map[string]*Assignment
 	client       *containerd.Client
 	ctx          context.Context
+}
+
+type Assignment struct {
+	ContainerPath string
+	Name          string
 }
 
 // PluginInterfaceStart is an optional interface that could be implemented by plugin.
@@ -106,17 +110,15 @@ func (scdp *SocketCANDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Al
 	for _, req := range r.ContainerRequests {
 		var devices []*pluginapi.DeviceSpec
 		for i, devid := range req.DevicesIDs {
-			glog.V(3).Infof("Allocate: %s %s", devid, req)
 			dev := new(pluginapi.DeviceSpec)
-			assignmentPath := fmt.Sprintf("/tmp/k8s-socketcan/%s", devid)
+			containerPath := fmt.Sprintf("/tmp/k8s-socketcan/%s", devid)
 			dev.HostPath = fakeDevicePath
-			dev.ContainerPath = assignmentPath
+			dev.ContainerPath = containerPath
 			dev.Permissions = "r"
 			devices = append(devices, dev)
 
 			scdp.assignmentCh <- &Assignment{
-				devid,
-				assignmentPath,
+				containerPath,
 				fmt.Sprintf(vcanNameTemplate, i),
 			}
 		}
@@ -168,47 +170,33 @@ func (p *SocketCANDevicePlugin) interfaceCreator() {
 	p.ctx = namespaces.WithNamespace(context, "k8s.io")
 
 	// we'll keep a list of pending allocations and keep checking for new containers every
-	// containerWaitRetrySeconds
+	// containerWaitDelaySeconds
 	p.device_paths = make(map[string]*Assignment)
 
 	go func() {
 		var retry *time.Timer = time.NewTimer(0)
+		var waiting = false
 		<-retry.C
 		for {
-
 			select {
 			case alloc := <-p.assignmentCh:
 				glog.V(3).Infof("New allocation request: %v", alloc)
 				p.device_paths[alloc.ContainerPath] = alloc
 			case <-retry.C:
+				waiting = false
+				glog.V(3).Infof("Trying to allocate: %v", p.device_paths)
+				p.tryAllocatingDevices()
 			}
 
-			glog.V(3).Infof("Trying to allocate: %v", p.device_paths)
-			p.tryAllocatingDevices()
-
-			if len(p.device_paths) > 0 {
-				retry = time.NewTimer(containerWaitRetrySeconds * time.Second)
+			if !waiting && len(p.device_paths) > 0 {
+				retry = time.NewTimer(containerWaitDelaySeconds * time.Second)
+				waiting = true
 			}
 		}
 	}()
 }
 
-func findContainerWithDevice(ctx context.Context, containers []containerd.Container, device_paths map[string]*Assignment) (containerd.Container, string, error) {
-	var last_err error
-	for _, container := range containers {
-		spec, err := container.Spec(ctx)
-		if err != nil {
-			last_err = err
-		}
-		for _, device := range spec.Linux.Devices {
-			if _, ok := device_paths[device.Path]; ok {
-				return container, device.Path, nil
-			}
-		}
-	}
-	return nil, "", last_err
-}
-
+// searches through all containers for matching fake devices and creates the network interfaces
 func (p *SocketCANDevicePlugin) tryAllocatingDevices() {
 	containers, err := p.client.Containers(p.ctx, "")
 	if err != nil {
@@ -216,36 +204,37 @@ func (p *SocketCANDevicePlugin) tryAllocatingDevices() {
 		return
 	}
 
-	for {
-		container, path, err := findContainerWithDevice(p.ctx, containers, p.device_paths)
+	for _, container := range containers {
+		spec, err := container.Spec(p.ctx)
 		if err != nil {
-			glog.V(3).Infof("Failed to find container: %v", err)
+			glog.V(3).Infof("Failed to get fetch container spec: %v", err)
 			return
 		}
-		if container == nil {
-			return
-		}
+		for _, device := range spec.Linux.Devices {
+			if assignment, ok := p.device_paths[device.Path]; ok {
+				// we found a container we are looking for
+				task, err := container.Task(p.ctx, nil)
+				if err != nil {
+					glog.Warningf("Failed to get the task: %v", err)
+					return
+				}
 
-		task, err := container.Task(p.ctx, nil)
-		if err != nil {
-			glog.V(3).Infof("Failed to get the task: %v", err)
-			return
-		}
+				pids, err := task.Pids(p.ctx)
+				if err != nil {
+					glog.Warningf("Failed to get task Pids: %v", err)
+					return
+				}
 
-		pids, err := task.Pids(p.ctx)
-		if err != nil {
-			glog.V(3).Infof("Failed to get task Pids: %v", err)
-			return
-		}
+				err = p.createSocketcanInPod(assignment.Name, int(pids[0].Pid))
+				if err != nil {
+					glog.Warningf("Failed to create interface: %v: %v", assignment.Name, err)
+					return
+				}
 
-		err = p.createSocketcanInPod(p.device_paths[path].Name, int(pids[0].Pid))
-		if err != nil {
-			glog.V(3).Infof("Pod attachment failed with: %v", err)
-			return
+				glog.V(3).Infof("Successfully created the vcan interface: %v", assignment)
+				delete(p.device_paths, device.Path)
+			}
 		}
-
-		glog.V(3).Infof("Successfully created the vcan interface: %v", path)
-		delete(p.device_paths, path)
 	}
 }
 
@@ -255,24 +244,11 @@ func (nbdp *SocketCANDevicePlugin) createSocketcanInPod(ifname string, container
 	la.Name = ifname
 	la.Flags = net.FlagUp
 	la.Namespace = netlink.NsPid(containerPid)
-	link := &netlink.GenericLink{
+
+	return netlink.LinkAdd(&netlink.GenericLink{
 		LinkAttrs: la,
 		LinkType:  "vcan",
-	}
-
-	err := netlink.LinkAdd(link)
-	if err != nil {
-		glog.V(3).Infof("LinkAdd failed with: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-type Assignment struct {
-	DeviceID      string
-	ContainerPath string
-	Name          string
+	})
 }
 
 func main() {
