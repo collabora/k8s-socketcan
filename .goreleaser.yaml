@@ -1,0 +1,69 @@
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+dockers:
+  - image_templates:
+    - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-amd64
+    build_flag_templates:
+    - --platform=linux/amd64
+    - --label=org.opencontainers.image.title={{ .ProjectName }}
+    - --label=org.opencontainers.image.description={{ .ProjectName }}
+    - --label=org.opencontainers.image.url=https://github.com/jpc/k8s-socketcan/
+    - --label=org.opencontainers.image.source=https://github.com/jpc/k8s-socketcan/
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+    - --label=org.opencontainers.image.licenses=MIT
+  - image_templates:
+    - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-arm64v8
+    goarch: arm64
+    build_flag_templates:
+    - --platform=linux/arm64/v8
+    - --label=org.opencontainers.image.title={{ .ProjectName }}
+    - --label=org.opencontainers.image.description={{ .ProjectName }}
+    - --label=org.opencontainers.image.url=https://github.com/jpc/k8s-socketcan/
+    - --label=org.opencontainers.image.source=https://github.com/jpc/k8s-socketcan/
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+    - --label=org.opencontainers.image.licenses=MIT
+  - image_templates:
+    - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-386
+    goarch: "386"
+    build_flag_templates:
+    - --platform=linux/386
+    - --label=org.opencontainers.image.title={{ .ProjectName }}
+    - --label=org.opencontainers.image.description={{ .ProjectName }}
+    - --label=org.opencontainers.image.url=https://github.com/jpc/k8s-socketcan/
+    - --label=org.opencontainers.image.source=https://github.com/jpc/k8s-socketcan/
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+    - --label=org.opencontainers.image.licenses=MIT
+docker_manifests:
+- name_template: ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}
+  image_templates:
+  - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-amd64
+  - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-arm64v8
+  - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-386
+- name_template: ghcr.io/jpc/{{ .ProjectName }}:latest
+  image_templates:
+  - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-amd64
+  - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-arm64v8
+  - ghcr.io/jpc/{{ .ProjectName }}:{{ .Version }}-386
