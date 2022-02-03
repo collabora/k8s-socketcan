@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"os"
-	"syscall"
 	"time"
 
 	"github.com/containerd/containerd"
@@ -45,7 +43,7 @@ func (scl SocketCANLister) NewPlugin(socketcan string) dpm.PluginInterface {
 
 // Device plugin class
 const (
-	fakeDevicePath = "/var/run/device-plugin-socketcan-fakedev"
+	fakeDevicePath = "/var/run/k8s-socketcan-fakedev"
 )
 
 type SocketCANDevicePlugin struct {
@@ -64,22 +62,8 @@ type Assignment struct {
 // If case Start is implemented, it will be executed by Manager after plugin instantiation and before its registartion to kubelet.
 // This method could be used to prepare resources before they are offered to Kubernetes.
 func (p *SocketCANDevicePlugin) Start() error {
-	createFakeDevice()
 	go p.interfaceCreator()
 	return nil
-}
-
-func createFakeDevice() {
-	_, err := os.Stat(fakeDevicePath)
-	if err == nil {
-		// already exists
-	} else if os.IsNotExist(err) {
-		if err := syscall.Mknod(fakeDevicePath, uint32(0777)|syscall.S_IFBLK, 0x0101); err != nil {
-			panic(err)
-		}
-	} else {
-		panic(err)
-	}
 }
 
 // ListAndWatch returns a stream of List of Devices

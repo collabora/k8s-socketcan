@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: k8s-socketcan
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      name: k8s-socketcan
+  template:
+    metadata:
+      labels:
+        name: k8s-socketcan
+    spec:
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      hostPID: true
+      initContainers:
+      - name: init-vcan
+        image: busybox:1.28
+        command:
+          - sh
+          - -c
+          - chroot /root/ apt-get install -y linux-modules-extra-$(uname -r) &&
+            chroot /root/ modprobe vcan &&
+            chroot /root/ mknod /var/run/k8s-socketcan-fakedev b 1 1 &&
+            echo Succesfully installed and loaded the vcan kernel module
+        securityContext:
+          privileged: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+          - name: root
+            mountPath: /root
+      containers:
+      - name: k8s-socketcan
+        image: busybox
+        command: [ 'sh' ]
+        args: [ '-c', 'exec tail -f /dev/null' ]
+        securityContext:
+          privileged: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+          - name: run-containerd
+            mountPath: /var/run/containerd/containerd.sock
+          - name: device-plugin
+            mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: run-containerd
+          hostPath:
+            path: /var/snap/microk8s/common/run/containerd.sock
+            type: Socket
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: root
+          hostPath:
+            path: /
+      tolerations:
+        - key: sku
+          operator: Equal
+          value: gpu
+          effect: NoSchedule
+  updateStrategy:
+    type: RollingUpdate
