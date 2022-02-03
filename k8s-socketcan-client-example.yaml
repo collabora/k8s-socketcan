@@ -1,31 +1,21 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
   name: k8s-socketcan-client-example
-  labels:
-    name: k8s-socketcan-client-example
 spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: k8s-socketcan-client-example
-  template:
-    metadata:
-      labels:
-        app: k8s-socketcan-client-example
-    spec:
-      containers:
-      - command:
-        - sleep
-        - "18000"
-        image: ubuntu:20.04
-        imagePullPolicy: Always
-        name: k8s-socketcan-client-example
-        resources:
-          limits:
-            k8s.collabora.com/socketcan: 2
-      tolerations:
-      - key: "sku"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - apk add can-utils && tail -f /dev/null
+    image: alpine
+    imagePullPolicy: Always
+    name: k8s-socketcan-client-example
+    resources:
+      limits:
+        k8s.collabora.com/socketcan: 2
+  tolerations:
+  - key: "sku"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
