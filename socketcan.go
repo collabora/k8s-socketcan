@@ -237,6 +237,12 @@ func (nbdp *SocketCANDevicePlugin) createSocketcanInPod(ifname string, container
 
 func main() {
 	flag.Parse()
+
+	// Kubernetes plugin uses the kubernetes library, which uses glog, which logs to the filesystem by default,
+	// while we need all logs to go to stderr
+	// See also: https://github.com/coredns/coredns/pull/1598
+	flag.Set("logtostderr", "true")
+
 	manager := dpm.NewManager(SocketCANLister{})
 	manager.Run()
 }
