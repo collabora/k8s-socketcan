@@ -53,4 +53,4 @@ from scrach and has some significant improvements:
 - it supports `containerd` (which is used by default in most k8s clusters, like AKS, these days) instead of the Docker daemon
 - it is capable of handling multiple Pods starting at the same time, which avoids head-of-the-line blocking issues when you have Pods that take a long time to start
 
-Both projects currently support only separate per-Pod SocetkCAN networks.
+Both projects currently support only separate per-Pod SocketCAN networks.
