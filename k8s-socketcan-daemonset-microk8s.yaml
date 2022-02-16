@@ -21,8 +21,8 @@ spec:
         command:
           - sh
           - -c
-          - chroot /root/ modprobe vcan || { chroot /root/ apt-get install -y linux-modules-extra-$(uname -r) && chroot /root/ modprobe vcan } &&
-            chroot /root/ mknod /var/run/k8s-socketcan-fakedev b 1 1
+          - chroot /root/ modprobe vcan || { chroot /root/ apt-get install -y linux-modules-extra-$(uname -r) && chroot /root/ modprobe vcan; } &&
+            chroot /root/ mknod /var/run/k8s-socketcan-fakedev b 1 1;
             echo Succesfully installed and loaded the vcan kernel module
         securityContext:
           privileged: true
@@ -33,9 +33,7 @@ spec:
             mountPath: /root
       containers:
       - name: k8s-socketcan
-        image: busybox
-        command: [ 'sh' ]
-        args: [ '-c', 'exec tail -f /dev/null' ]
+        image: ghcr.io/collabora/k8s-socketcan:latest
         securityContext:
           privileged: true
           capabilities:
