@@ -16,33 +16,37 @@ spec:
       hostNetwork: true
       hostPID: true
       initContainers:
-      - name: init-vcan
+      - name: init
         image: busybox:1.28
-        command: ['sh', '-c', "chroot /root/ apt-get install -y linux-modules-extra-$(uname -r); chroot /root/ modprobe vcan"]
-        volumeMounts:
-          - name: root
-            mountPath: /root
-      containers:
-      - name: k8s-socketcan
-        image: busybox
-        command: [ 'sh' ]
-        args: [ '-c', 'exec tail -f /dev/null' ]
+        command:
+          - sh
+          - -c
+          - chroot /root/ modprobe vcan || { chroot /root/ apt-get install -y linux-modules-extra-$(uname -r) && chroot /root/ modprobe vcan; } && echo Succesfully installed and loaded the vcan kernel module;
+            chroot /root/ mknod /var/run/k8s-socketcan/fakedev b 1 1 && echo Succesfully created the /var/run/k8s-socketcan/fakedev device;
+            for path in /var/run/containerd/containerd.sock /var/snap/microk8s/common/run/containerd.sock /run/k3s/containerd/containerd.sock; do [ -S /root/$path ] && ln -sfn $sock /root/var/run/k8s-socketcan/containerd.sock && echo "Found containerd socket in $path" && break; done
         securityContext:
           privileged: true
           capabilities:
             drop: ["ALL"]
         volumeMounts:
-          - name: run-containerd
-            mountPath: /var/run/containerd/containerd.sock
-          - name: device-plugin
-            mountPath: /var/lib/kubelet/device-plugins
           - name: root
             mountPath: /root
+      containers:
+      - name: k8s-socketcan
+        image: ghcr.io/collabora/k8s-socketcan:latest
+        securityContext:
+          privileged: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+          - name: var-run-k8s-socketcan
+            mountPath: /var/run/k8s-socketcan/
+          - name: device-plugin
+            mountPath: /var/lib/kubelet/device-plugins
       volumes:
-        - name: run-containerd
+        - name: var-run-k8s-socketcan
           hostPath:
-            path: /var/snap/microk8s/common/run/containerd.sock
-            type: Socket
+            path: /var/run/k8s-socketcan/
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins

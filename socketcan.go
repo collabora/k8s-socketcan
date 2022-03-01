@@ -43,7 +43,7 @@ func (scl SocketCANLister) NewPlugin(socketcan string) dpm.PluginInterface {
 
 // Device plugin class
 const (
-	fakeDevicePath = "/var/run/k8s-socketcan-fakedev"
+	fakeDevicePath = "/var/run/k8s-socketcan/fakedev"
 )
 
 type SocketCANDevicePlugin struct {
@@ -143,7 +143,7 @@ func (SocketCANDevicePlugin) GetPreferredAllocation(ctx context.Context, in *plu
 // and keep checking all containers to look for this sentinel device. After we find one, we
 // inject the network interface into it's namespace.
 func (p *SocketCANDevicePlugin) interfaceCreator() {
-	client, err := containerd.New("/var/run/containerd/containerd.sock")
+	client, err := containerd.New("/var/run/k8s-socketcan/containerd.sock")
 	if err != nil {
 		glog.V(3).Info("Failed to connect to containerd")
 		panic(err)
