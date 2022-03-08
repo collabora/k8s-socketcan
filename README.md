@@ -1,25 +1,62 @@
-# Virtual SocketCAN Kubernetes device plugin
+# SocketCAN Kubernetes device plugin
 
 This plugins enables you to create virtual [SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your Kubernetes Pods.
 `vcan` allows processes inside the pod to communicate with each other using the full Linux SocketCAN API.
 
 ## Usage example
 
-Assuming you have a microk8s Kubernetes cluster with `kubectl` configured properly you can install the SocketCAN plugin:
+Assuming you have a [microk8s](https://microk8s.io) Kubernetes cluster you can install the SocketCAN plugin:
 
-    kubectl apply -f https://raw.githubusercontent.com/jpc/k8s-socketcan/main/k8s-socketcan-daemonset-microk8s.yaml
+    microk8s kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-daemonset.yaml
 
-There is also a YAML file for Azure AKS. Using it with other k8s providers may required an adjustment of the
-`run-containerd` hostPath volume to point to the containerd control socket.
+NOTE: Using it with other k8s providers should require only an adjustment to the `init` container script to add a new
+search path for the `containerd.sock` control socket and/or install the `vcan` kernel module.
 
-Next, you can create a simple Pod that has two vcan interfaces enabled:
+Next, you can create a simple Pod that has two `vcan` interfaces enabled:
 
-    kubectl apply -f https://raw.githubusercontent.com/jpc/k8s-socketcan/main/k8s-socketcan-client-example.yaml
+    microk8s kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-client-example.yaml
 
 Afterwards you can run these two commands in two separate terminals to verify it's working correctly:
 
-    kubectl exec -it k8s-socketcan-client-example -- candump vcan0
-    kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88
+    microk8s kubectl exec -it k8s-socketcan-client-example -- candump vcan0
+    microk8s kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88
+
+Adding SocketCAN support to an existing Pod is as easy as adding a resource limit in the container spec:
+
+```yaml
+resources:
+  limits:
+    k8s.collabora.com/vcan: 1
+```
+
+## Hardware CAN interfaces
+
+The SocketCAN device plugin also supports hardware CAN interfaces which is useful if you want to use (for example)
+[K3s](https://k3s.io) to manage your embedded system software. It allows you to improve security by moving a SocketCAN network
+interface into a single container and fully isolating it from any other applications on the system. It's a perfect
+solution if you have a daemon that arbitrates all access to the CAN bus and you wish to containerize it.
+
+To move a hardware CAN interface into a Pod you have to modify the DaemonSet to specify the names of the interfaces
+you wish to make available. The names should be passed as a space separated list in the `SOCKETCAN_DEVICES` environment
+variable:
+
+```yaml
+containers:
+- name: k8s-socketcan
+  image: ghcr.io/collabora/k8s-socketcan:latest
+  env:
+  - name: SOCKETCAN_DEVICES
+    value: "can1 can2"
+```
+
+Afterwards, in the client container definition, instead of `k8s.collabora.com/vcan` you can specify the name of
+the interface you wish to use (adding the `socketcan-` prefix to make sure it's unambiguous):
+
+```yaml
+resources:
+  limits:
+    k8s.collabora.com/socketcan-can1: 1
+```
 
 ## Learn more
 
@@ -37,12 +74,18 @@ Other resources:
 
 ## Limitations
 
-Currently each Pod get it's own isolated virtual SocketCAN network. There is no support for bridging
-this to other Pods on the same node or to other nodes in the cluster.
+The plugin requires kernel support for SocketCAN (compiled in or as a module) on the cluster Nodes.
+This is a package installation away on Ubuntu (so microk8s and Azure AKS work great) but unfortunatelly does not seem
+possible at all on Alpine (so for example Rancher Desktop <= v1.1.1 does not work).
 
-[Adding local bridging would be possible with the `vxcan` functionality in the kernel and the `cangw` tool.](https://www.lagerdata.com/articles/forwarding-can-bus-traffic-to-a-docker-container-using-vxcan-on-raspberry-pi)
-Transparent bridging to other cluster nodes over the network should be possible manually with [cannelloni](https://github.com/mguentner/cannelloni).
-Pull requests to integrate both of these automatically are more then welcome.
+Currently each Pod get it's own isolated virtual SocketCAN network. There is no support for bridging
+this to other Pods on the same node or to other nodes in the cluster. [Adding local bridging would be possible with
+the `vxcan` functionality in the kernel and the `cangw` tool.](https://www.lagerdata.com/articles/forwarding-can-bus-traffic-to-a-docker-container-using-vxcan-on-raspberry-pi) Transparent bridging to other cluster nodes over
+the network should be possible manually with [cannelloni](https://github.com/mguentner/cannelloni). Pull requests to either of these cases automatically
+are more then welcome.
+
+Currently the plugin only work with clusters based on containerd, which includes most production clusters but
+not Docker Desktop (we recommend using [microk8s](https://microk8s.io) instead). Pull requests to support dockerd are of course welcome.
 
 ## Other solutions
 
@@ -50,7 +93,8 @@ This project was inspired by the [k8s-device-plugin-socketcan](https://github.co
 from scrach and has some significant improvements:
 
 - it has a valid Open Source license (MIT)
-- it supports `containerd` (which is used by default in most k8s clusters, like AKS, these days) instead of the Docker daemon
+- it supports `containerd` (which is used by default in most k8s clusters, like AKS, these days) instead of the `dockerd`
 - it is capable of handling multiple Pods starting at the same time, which avoids head-of-the-line blocking issues when you have Pods that take a long time to start
+- it supports exclusive use of real CAN interfaces
 
-Both projects currently support only separate per-Pod SocketCAN networks.
+Neither project currently supports sharing a single SocketCAN interface among multiple Pods.
