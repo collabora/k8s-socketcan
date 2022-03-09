@@ -1,13 +1,18 @@
 # SocketCAN Kubernetes device plugin
 
-This plugins enables you to create virtual [SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your Kubernetes Pods.
-`vcan` allows processes inside the pod to communicate with each other using the full Linux SocketCAN API.
+*We asked an [AI](https://colab.research.google.com/github/zippy731/disco-diffusion-turbo/blob/main/Disco_Diffusion_v5_Turbo_%5Bw_3D_animation%5D.ipynb) what it thinks about our SocketCAN Kubernetes plugin, this was it's answer...  
+We are still trying to figure out what's with all the lighthouses??*
+
+This plugins enables you to use hardware-backed and virtual [SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your Kubernetes Pods.
+`vcan` allows processes inside the pod to communicate with each other using the full Linux SocketCAN API. If you have
+a real CAN adapter in you embeded system you can use this plugin to use it inside your Kubernetes deployment.
 
 ## Usage example
 
 Assuming you have a [microk8s](https://microk8s.io) Kubernetes cluster you can install the SocketCAN plugin:
 
     microk8s kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-daemonset.yaml
+    microk8s kubectl wait --for=condition=ready pod -l name=k8s-socketcan
 
 NOTE: Using it with other k8s providers should require only an adjustment to the `init` container script to add a new
 search path for the `containerd.sock` control socket and/or install the `vcan` kernel module.
@@ -15,11 +20,16 @@ search path for the `containerd.sock` control socket and/or install the `vcan` k
 Next, you can create a simple Pod that has two `vcan` interfaces enabled:
 
     microk8s kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-client-example.yaml
+    microk8s kubectl wait --for=condition=ready pod k8s-socketcan-client-example
 
 Afterwards you can run these two commands in two separate terminals to verify it's working correctly:
 
     microk8s kubectl exec -it k8s-socketcan-client-example -- candump vcan0
     microk8s kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88
+
+If everything goes according to plan you should see this in the two terminals:
+
+[![video of the SocketCAN demo](setup.svg)](https://asciinema.org/a/469930)
 
 Adding SocketCAN support to an existing Pod is as easy as adding a resource limit in the container spec:
 
@@ -84,8 +94,8 @@ the `vxcan` functionality in the kernel and the `cangw` tool.](https://www.lager
 the network should be possible manually with [cannelloni](https://github.com/mguentner/cannelloni). Pull requests to either of these cases automatically
 are more then welcome.
 
-Currently the plugin only work with clusters based on containerd, which includes most production clusters but
-not Docker Desktop (we recommend using [microk8s](https://microk8s.io) instead). Pull requests to support dockerd are of course welcome.
+Currently, the plugin only work with clusters based on containerd, which includes most production clusters but
+not Docker Desktop (we recommend using [microk8s](https://microk8s.io) instead). Pull requests to support `dockerd` are of course welcome.
 
 ## Other solutions
 

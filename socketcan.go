@@ -81,7 +81,7 @@ func (p *VCANDevicePlugin) Start() error {
 
 // ListAndWatch returns a stream of List of Devices
 // Whenever a Device state change or a Device disappears, ListAndWatch
-// returns the new list
+// returns the new list.
 func (scdp *VCANDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	devices := make([]*pluginapi.Device, 100)
 
@@ -100,7 +100,7 @@ func (scdp *VCANDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Devic
 
 // Allocate is called during container creation so that the Device
 // Plugin can run device specific operations and instruct Kubelet
-// of the steps to make the Device available in the container
+// of the steps to make the Device available in the container.
 func (scdp *VCANDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	var response pluginapi.AllocateResponse
 
@@ -130,14 +130,14 @@ func (scdp *VCANDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Allocat
 }
 
 // GetDevicePluginOptions returns options to be communicated with Device
-// Manager
+// Manager.
 func (VCANDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	return nil, nil
 }
 
 // PreStartContainer is called, if indicated by Device Plugin during registeration phase,
 // before each container start. Device plugin can run device specific operations
-// such as reseting the device before making devices available to the container
+// such as reseting the device before making devices available to the container.
 func (VCANDevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
 	return nil, nil
 }
@@ -193,7 +193,7 @@ func (p *VCANDevicePlugin) interfaceCreator() {
 	}()
 }
 
-// searches through all containers for matching fake devices and creates the network interfaces
+// Searches through all containers for matching fake devices and creates the network interfaces.
 func (p *VCANDevicePlugin) tryAllocatingDevices() {
 	containers, err := p.client.Containers(p.ctx, "")
 	if err != nil {
@@ -235,7 +235,7 @@ func (p *VCANDevicePlugin) tryAllocatingDevices() {
 	}
 }
 
-// creates the named vcan interface inside the pod namespace
+// Creates the named vcan interface inside the pod namespace.
 func (nbdp *VCANDevicePlugin) createSocketcanInPod(ifname string, containerPid int) error {
 	la := netlink.NewLinkAttrs()
 	la.Name = ifname
@@ -266,7 +266,7 @@ func (p *SocketCANDevicePlugin) Start() error {
 
 // ListAndWatch returns a stream of List of Devices
 // Whenever a Device state change or a Device disappears, ListAndWatch
-// returns the new list
+// returns the new list.
 func (scdp *SocketCANDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	devices := make([]*pluginapi.Device, 1)
 
@@ -285,7 +285,7 @@ func (scdp *SocketCANDevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.
 
 // Allocate is called during container creation so that the Device
 // Plugin can run device specific operations and instruct Kubelet
-// of the steps to make the Device available in the container
+// of the steps to make the Device available in the container.
 func (scdp *SocketCANDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	var response pluginapi.AllocateResponse
 
@@ -315,14 +315,14 @@ func (scdp *SocketCANDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Al
 }
 
 // GetDevicePluginOptions returns options to be communicated with Device
-// Manager
+// Manager.
 func (SocketCANDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	return nil, nil
 }
 
 // PreStartContainer is called, if indicated by Device Plugin during registeration phase,
 // before each container start. Device plugin can run device specific operations
-// such as reseting the device before making devices available to the container
+// such as reseting the device before making devices available to the container.
 func (SocketCANDevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
 	return nil, nil
 }
@@ -378,7 +378,7 @@ func (p *SocketCANDevicePlugin) interfaceCreator() {
 	}()
 }
 
-// searches through all containers for matching fake devices and creates the network interfaces
+// Searches through all containers for matching fake devices and creates the network interfaces.
 func (p *SocketCANDevicePlugin) tryAllocatingDevices() {
 	containers, err := p.client.Containers(p.ctx, "")
 	if err != nil {
@@ -420,7 +420,7 @@ func (p *SocketCANDevicePlugin) tryAllocatingDevices() {
 	}
 }
 
-// creates the named vcan interface inside the pod namespace
+// Creates the named vcan interface inside the pod namespace.
 func (nbdp *SocketCANDevicePlugin) moveSocketcanIntoPod(ifname string, containerPid int) error {
 	link, err := netlink.LinkByName(ifname)
 	if err != nil {
