@@ -1,9 +1,11 @@
 # SocketCAN Kubernetes device plugin
 
-https://user-images.githubusercontent.com/107984/157506173-5d2788e1-71ca-49ae-afc3-b7f7afbab798.mp4
+<div align="center">
+  <video src="https://user-images.githubusercontent.com/107984/157506173-5d2788e1-71ca-49ae-afc3-b7f7afbab798.mp4"></video>
+</div>
 
 *We asked an [AI](https://colab.research.google.com/github/zippy731/disco-diffusion-turbo/blob/main/Disco_Diffusion_v5_Turbo_%5Bw_3D_animation%5D.ipynb) what it thinks about our SocketCAN Kubernetes plugin, this was it's answer...  
-We are still trying to figure out what's with all the lighthouses??*
+What we are still trying to figure out is: what's with all the lighthouses??*
 
 This plugins enables you to use hardware-backed and virtual [SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your Kubernetes Pods.
 `vcan` allows processes inside the pod to communicate with each other using the full Linux SocketCAN API. If you have
