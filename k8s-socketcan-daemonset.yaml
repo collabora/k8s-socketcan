@@ -22,9 +22,9 @@ spec:
           - sh
           - -c
           - chroot /root/ modprobe vcan || { chroot /root/ apt-get install -y linux-modules-extra-$(uname -r) && chroot /root/ modprobe vcan; } && echo Succesfully installed and loaded the vcan kernel module;
-            chroot /root/ mkdir -p /var/run/k8s-socketcan/ && echo Succesfully created the /var/run/k8s-socketcan/ folder;
-            chroot /root/ mknod /var/run/k8s-socketcan/fakedev b 1 1 && echo Succesfully created the /var/run/k8s-socketcan/fakedev device;
-            for path in /var/run/containerd/containerd.sock /var/snap/microk8s/common/run/containerd.sock /run/k3s/containerd/containerd.sock; do [ -S /root/$path ] && chroot /root/ ln -sfn $path /var/run/k8s-socketcan/containerd.sock && echo "Found containerd socket in $path" && break; done;
+            mknod /var/run/k8s-socketcan/fakedev b 1 1 && echo Succesfully created the /var/run/k8s-socketcan/fakedev device;
+            for path in /root/var/run/containerd/containerd.sock /root/var/snap/microk8s/common/run/containerd.sock /root/run/k3s/containerd/containerd.sock; do [ -S $path ] && ln -sfn $path /var/run/k8s-socketcan/containerd.sock && echo "Found containerd socket in $path" && break; done;
+            #tail -f /dev/null
         securityContext:
           privileged: true
           capabilities:
@@ -32,8 +32,13 @@ spec:
         volumeMounts:
           - name: root
             mountPath: /root
+          - name: var-run-k8s-socketcan
+            mountPath: /var/run/k8s-socketcan
       containers:
       - name: k8s-socketcan
+        # image: busybox
+        # command: [ 'sh' ]
+        # args: [ '-c', 'exec tail -f /dev/null' ]
         image: ghcr.io/collabora/k8s-socketcan:latest
         env:
         - name: SOCKETCAN_DEVICES
@@ -48,6 +53,8 @@ spec:
           - name: device-plugin
             mountPath: /var/lib/kubelet/device-plugins
       volumes:
+        - name: var-run-k8s-socketcan
+          emptyDir: {}
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
