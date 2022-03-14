@@ -4,11 +4,11 @@ metadata:
   name: k8s-socketcan-client-example
 spec:
   containers:
-  - command:
+  - image: ghcr.io/collabora/alpine-can:main
+    command:
     - /bin/sh
     - -c
-    - apk add can-utils && tail -f /dev/null
-    image: alpine
+    - tail -f /dev/null
     imagePullPolicy: Always
     name: k8s-socketcan-client-example
     resources:
