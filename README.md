@@ -43,6 +43,17 @@ resources:
     k8s.collabora.com/vcan: 1
 ```
 
+## Other Kubernetes providers
+
+We support Azure AKS, `microk8s` and `k3s` out-of-the-box. To use it with other k8s providers (keeping in mind the
+[Limitations](#limitations)) you should look into the `init` container script which:
+
+1. installs and loads the `vcan` kernel module
+2. searches for a `containerd.sock` in a few well known paths and makes a symlink.
+
+If you add `tail -f /dev/null` at the end of the script you will be able to `kubectl exec` into the container
+and have a look around to verify the environment is created properly.
+
 ## Hardware CAN interfaces
 
 The SocketCAN device plugin also supports hardware CAN interfaces which is useful if you want to use (for example)
