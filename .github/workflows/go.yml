@@ -56,3 +56,6 @@ jobs:
         kubectl get pods -A -o wide
         (sleep 1 && kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88) &
         kubectl exec -it k8s-socketcan-client-example -- candump vcan0 -n 1 -T 5000
+    - name: Setup tmate session
+      if: ${{ failure() }}
+      uses: mxschmitt/action-tmate@v3
