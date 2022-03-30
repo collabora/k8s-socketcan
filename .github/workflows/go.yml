@@ -54,6 +54,7 @@ jobs:
         kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-client-example.yaml
         kubectl wait --for=condition=ready --timeout=60s pod k8s-socketcan-client-example
         kubectl get pods -A -o wide
+        sleep 5
         (sleep 1 && kubectl exec k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88) &
         kubectl exec -it k8s-socketcan-client-example -- candump -n 1 -T 5000 vcan0
     - name: Setup tmate session
