@@ -56,3 +56,9 @@ jobs:
         kubectl get pods -A -o wide
         (sleep 1 && kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88) &
         kubectl exec -it k8s-socketcan-client-example -- candump vcan0 -n 1 -T 5000
+    - name: Setup tmate session
+      if: ${{ failure() }}
+      run: |
+        curl -O https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+        tar --strip-components=1 -xf tmate-2.4.0-static-linux-amd64.tar.xz
+        ./tmate
