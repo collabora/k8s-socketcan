@@ -33,7 +33,7 @@ Afterwards you can run these two commands in two separate terminals to verify it
 
 If everything goes according to plan you should see this in the two terminals:
 
-[![video of the SocketCAN demo](setup.svg)](https://asciinema.org/a/469930)
+[![video of the SocketCAN demo](setup.svg)](https://asciinema.org/a/2RL3yNdRI13iRIWcrrjHaJVyR)
 
 Adding SocketCAN support to an existing Pod is as easy as adding a resource limit in the container spec:
 
