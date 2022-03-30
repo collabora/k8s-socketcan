@@ -37,3 +37,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_OWNER: ${{ github.repository_owner }}
+
+  test:
+    name: Test the release on MicroK8s
+    runs-on: ubuntu-latest
+    steps:
+    - uses: balchua/microk8s-actions@v0.2.1
+      with:
+        channel: '1.19/stable'
+        addons: '["dns"]'
+    - name: Test k8s-socketcan
+      run: |
+        kubectl get no
+        kubectl get pods -A -o wide
