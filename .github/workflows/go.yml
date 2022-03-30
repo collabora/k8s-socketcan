@@ -39,6 +39,7 @@ jobs:
           GITHUB_OWNER: ${{ github.repository_owner }}
 
   test:
+    needs: build
     name: Test the release on MicroK8s
     runs-on: ubuntu-latest
     steps:
