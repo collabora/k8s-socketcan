@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: MIT
+ *
+ * Copyright (c) 2022 Jakub Piotr Cłapa <jpc@collabora.com>
+ */
 package main
 
 import (
