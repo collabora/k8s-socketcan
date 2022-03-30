@@ -52,7 +52,8 @@ spec:
             mountPath: /var/run/k8s-socketcan
       volumes:
         - name: var-run-k8s-socketcan
-          emptyDir: {}
+          hostPath:
+            path: /var/run/k8s-socketcan/
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
