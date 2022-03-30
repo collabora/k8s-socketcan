@@ -50,9 +50,9 @@ jobs:
     - name: Test k8s-socketcan
       run: |
         kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-daemonset.yaml
-        kubectl wait --for=condition=ready pod -l name=k8s-socketcan
+        kubectl wait --for=condition=ready --timeout=60s pod -l name=k8s-socketcan
         kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-client-example.yaml
-        kubectl wait --for=condition=ready pod k8s-socketcan-client-example
+        kubectl wait --for=condition=ready --timeout=60s pod k8s-socketcan-client-example
         kubectl get pods -A -o wide
         (sleep 1 && kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88) &
         kubectl exec -it k8s-socketcan-client-example -- candump vcan0 -n 1 -T 5000
