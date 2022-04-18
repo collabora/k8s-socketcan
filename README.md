@@ -4,12 +4,16 @@
   <video src="https://user-images.githubusercontent.com/107984/157506173-5d2788e1-71ca-49ae-afc3-b7f7afbab798.mp4"></video>
 </div>
 
-*We asked an [AI](https://colab.research.google.com/github/zippy731/disco-diffusion-turbo/blob/main/Disco_Diffusion_v5_Turbo_%5Bw_3D_animation%5D.ipynb) what it thinks about our SocketCAN Kubernetes plugin, this was it's answer...  
+*We asked an [AI](https://colab.research.google.com/github/zippy731/disco-diffusion-turbo/blob/main/Disco_Diffusion_v5_Turbo_%5Bw_3D_animation%5D.ipynb) what it thinks about our SocketCAN Kubernetes plugin, this was it's answer...
 What we are still trying to figure out is: what's with all the lighthouses??*
 
-This plugins enables you to use hardware-backed and virtual [SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your Kubernetes Pods.
-`vcan` allows processes inside the pod to communicate with each other using the full Linux SocketCAN API. If you have
-a real CAN adapter in you embeded system you can use this plugin to use it inside your Kubernetes deployment.
+
+This plugin enables you to use hardware-backed and virtual
+[SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your
+Kubernetes Pods. `vcan` allows processes inside the pod to communicate with each
+other using the full Linux SocketCAN API. If you have a real CAN adapter in your
+embedded system, you can use this plugin to use it inside your Kubernetes
+deployment.
 
 ## Usage example
 
@@ -26,7 +30,8 @@ Next, you can create a simple Pod that has two `vcan` interfaces enabled:
     microk8s kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-client-example.yaml
     microk8s kubectl wait --for=condition=ready pod k8s-socketcan-client-example
 
-Afterwards you can run these two commands in two separate terminals to verify it's working correctly:
+Afterwards, you can run these two commands in two separate terminals to verify
+it's working correctly:
 
     microk8s kubectl exec -it k8s-socketcan-client-example -- candump vcan0
     microk8s kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88
@@ -35,7 +40,8 @@ If everything goes according to plan you should see this in the two terminals:
 
 [![video of the SocketCAN demo](setup.svg)](https://asciinema.org/a/2RL3yNdRI13iRIWcrrjHaJVyR)
 
-Adding SocketCAN support to an existing Pod is as easy as adding a resource limit in the container spec:
+Adding SocketCAN support to an existing Pod is as easy as adding a resource
+limit in the container spec:
 
 ```yaml
 resources:
@@ -56,13 +62,17 @@ and have a look around to verify the environment is created properly.
 
 ## Hardware CAN interfaces
 
-The SocketCAN device plugin also supports hardware CAN interfaces which is useful if you want to use (for example)
-[K3s](https://k3s.io) to manage your embedded system software. It allows you to improve security by moving a SocketCAN network
-interface into a single container and fully isolating it from any other applications on the system. It's a perfect
-solution if you have a daemon that arbitrates all access to the CAN bus and you wish to containerize it.
+The SocketCAN device plugin also supports hardware CAN interfaces, which is
+useful if you want to use (for example) [K3s](https://k3s.io) to manage your
+embedded system software. It allows you to improve security by moving a
+SocketCAN network interface into a single container and fully isolating it from
+any other applications on the system. It's a perfect solution if you have a
+daemon that arbitrates all access to the CAN bus and you wish to containerize
+it.
 
-To move a hardware CAN interface into a Pod you have to modify the DaemonSet to specify the names of the interfaces
-you wish to make available. The names should be passed as a space separated list in the `SOCKETCAN_DEVICES` environment
+To move a hardware CAN interface into a Pod you have to modify the DaemonSet to
+specify the names of the interfaces you wish to make available. The names should
+be passed as a space separated list in the `SOCKETCAN_DEVICES` environment
 variable:
 
 ```yaml
