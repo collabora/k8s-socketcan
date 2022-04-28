@@ -7,9 +7,9 @@
 *We asked an [AI](https://colab.research.google.com/github/zippy731/disco-diffusion-turbo/blob/main/Disco_Diffusion_v5_Turbo_%5Bw_3D_animation%5D.ipynb) what it thinks about our SocketCAN Kubernetes plugin, this was it's answer...  
 What we are still trying to figure out is: what's with all the lighthouses??*
 
-This plugins enables you to use hardware-backed and virtual [SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your Kubernetes Pods.
+This plugin enables you to use hardware-backed and virtual [SocketCAN](https://en.wikipedia.org/wiki/SocketCAN) interfaces inside your Kubernetes Pods.
 `vcan` allows processes inside the pod to communicate with each other using the full Linux SocketCAN API. If you have
-a real CAN adapter in you embeded system you can use this plugin to use it inside your Kubernetes deployment.
+a real CAN adapter in your embedded system, you can use this plugin to use it inside your Kubernetes deployment.
 
 ## Usage example
 
@@ -26,7 +26,7 @@ Next, you can create a simple Pod that has two `vcan` interfaces enabled:
     microk8s kubectl apply -f https://raw.githubusercontent.com/Collabora/k8s-socketcan/main/k8s-socketcan-client-example.yaml
     microk8s kubectl wait --for=condition=ready pod k8s-socketcan-client-example
 
-Afterwards you can run these two commands in two separate terminals to verify it's working correctly:
+Afterwards, you can run these two commands in two separate terminals to verify it's working correctly:
 
     microk8s kubectl exec -it k8s-socketcan-client-example -- candump vcan0
     microk8s kubectl exec -it k8s-socketcan-client-example -- cansend vcan0 5A1#11.2233.44556677.88
