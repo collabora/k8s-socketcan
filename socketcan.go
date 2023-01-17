@@ -137,7 +137,7 @@ func (scdp *VCANDevicePlugin) Allocate(ctx context.Context, r *pluginapi.Allocat
 // GetDevicePluginOptions returns options to be communicated with Device
 // Manager.
 func (VCANDevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
-	return nil, nil
+	return &pluginapi.DevicePluginOptions{}, nil
 }
 
 // PreStartContainer is called, if indicated by Device Plugin during registeration phase,
