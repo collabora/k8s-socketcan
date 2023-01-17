@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: k8s-socketcan
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      name: k8s-socketcan
+  template:
+    metadata:
+      labels:
+        name: k8s-socketcan
+    spec:
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      hostPID: true
+      initContainers:
+      - name: init
+        image: busybox:1.28
+        command:
+          - sh
+          - -c
+          - chroot /root/ modprobe vcan || { chroot /root/ apt-get install -y linux-modules-extra-$(uname -r) && chroot /root/ modprobe vcan; } && echo Succesfully installed and loaded the vcan kernel module;
+            mknod /var/run/k8s-socketcan/fakedev b 1 1 && echo Succesfully created the /var/run/k8s-socketcan/fakedev device;
+            for path in /root/var/run/containerd/containerd.sock /root/var/snap/microk8s/common/run/containerd.sock /root/run/k3s/containerd/containerd.sock; do [ -S $path ] && ln -sfn $path /var/run/k8s-socketcan/containerd.sock && echo "Found containerd socket in $path" && break; done;
+        securityContext:
+          privileged: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+          - name: root
+            mountPath: /root
+          - name: var-run-k8s-socketcan
+            mountPath: /var/run/k8s-socketcan
+      containers:
+      - name: k8s-socketcan
+        args: ['-v', '3', '-logtostderr']
+        image: ghcr.io/collabora/k8s-socketcan:latest
+        env:
+        - name: SOCKETCAN_DEVICES
+          value: ""
+        securityContext:
+          privileged: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+          - name: root
+            mountPath: /root
+          - name: device-plugin
+            mountPath: /var/lib/kubelet/device-plugins
+          - name: var-run-k8s-socketcan
+            mountPath: /var/run/k8s-socketcan
+      volumes:
+        - name: var-run-k8s-socketcan
+          hostPath:
+            path: /var/run/k8s-socketcan/
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: root
+          hostPath:
+            path: /
+      tolerations:
+        - key: sku
+          operator: Equal
+          value: gpu
+          effect: NoSchedule
+  updateStrategy:
+    type: RollingUpdate
